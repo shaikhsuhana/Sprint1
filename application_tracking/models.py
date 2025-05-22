@@ -39,7 +39,7 @@ class JobAdvert(BaseModel):
     company_name =  models.CharField(max_length=150)
     employment_type = models.CharField(max_length=50, choices=EmploymentType)
     experience_level = models.CharField(max_length=50, choices=ExperienceLevel)
-    description = models.TextField()
+    description = models.CharField(max_length=255, unique=True)
     job_type =  models.CharField(max_length=50, choices=LocationTypeChoice)
     location =  models.CharField(max_length=255, null=True, blank=True)
     is_published = models.BooleanField(default=True)

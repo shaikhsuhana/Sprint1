@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('company_name', models.CharField(max_length=150)),
                 ('employment_type', models.CharField(choices=[('Full Time', 'Full Time'), ('Part Time', 'Part Time'), ('Contract', 'Contract')], max_length=50)),
                 ('experience_level', models.CharField(choices=[('Entry Level', 'Entry Level'), ('Mid Level', 'Mid Level'), ('Senior', 'Senior')], max_length=50)),
-                ('description', models.TextField()),
+                ('description', models.CharField(max_length=255, unique=True)),
                 ('job_type', models.CharField(choices=[('Onsite', 'Onsite'), ('Hybrid', 'Hybrid'), ('Remote', 'Remote')], max_length=50)),
                 ('location', models.CharField(blank=True, max_length=255, null=True)),
                 ('is_published', models.BooleanField(default=True)),
