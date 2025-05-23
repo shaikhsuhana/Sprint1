@@ -46,39 +46,41 @@ def logout(request: HttpRequest):
 
 
 @redirect_autheticated_user
-def register(request: HttpRequest):
-    if request.method == "POST":
-        email: str = request.POST["email"]
-        password: str = request.POST["password"]
-        cleaned_email = email.lower()
+def register(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
 
-        if User.objects.filter(email=cleaned_email).exists():
-            messages.error(request, "Email exists on the platform")
-            return redirect("register")
+        # Validate empty fields
+        if not email or not password or not confirm_password:
+            messages.error(request, "All fields are required.")
+            return redirect('register')
 
-        else:
-            verification_code = get_random_string(10)
-            PendingUser.objects.update_or_create(
-                email=cleaned_email,
-                defaults={
-                    "password": make_password(password),
-                    "verification_code": verification_code,
-                    "created_at": datetime.now(timezone.utc),
-                },
-            )
-            send_email.delay(
-                "Verify Your Account",
-                [cleaned_email],
-                "emails/email_verification_template.html",
-                context={"code": verification_code},
-            )
-            messages.success(request, f"Verification code sent to {cleaned_email}")
-            return render(
-                request, "verify_account.html", context={"email": cleaned_email}
-            )
+        # Confirm password match
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return redirect('register')
 
-    else:
-        return render(request, "register.html")
+        # Password strength check
+        import re
+        strong_regex = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$')
+        if not strong_regex.match(password):
+            messages.error(request, "Password must be 8+ characters, include uppercase, lowercase, number, and special character.")
+            return redirect('register')
+
+        # Check if user already exists
+        if User.objects.filter(username=email).exists():
+            messages.error(request, "Email is already registered.")
+            return redirect('register')
+
+        # Create user
+        user = User.objects.create_user(username=email, email=email, password=password)
+        user.save()
+        messages.success(request, "Registration successful. Please log in.")
+        return redirect('login')
+
+    return render(request, 'register.html')
 
 
 def verify_account(request: HttpRequest):
