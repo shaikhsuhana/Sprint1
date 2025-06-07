@@ -46,14 +46,13 @@ def logout(request: HttpRequest):
 
 
 @redirect_autheticated_user
-def register(request):
-    if request.method == 'POST':
+def register(request: HttpRequest):
+    if request.method == "POST":
         email = request.POST.get('email').lower()
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
         role = request.POST.get('role')
 
-        # Basic validation
         if not email or not password or not confirm_password or not role:
             messages.error(request, "Please fill in all required fields.")
             return redirect('register')
@@ -62,38 +61,24 @@ def register(request):
             messages.error(request, "Passwords do not match.")
             return redirect('register')
 
-        if User.objects.filter(email=email).exists() or PendingUser.objects.filter(email=email).exists():
-            messages.error(request, "Email is already registered or pending verification.")
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email is already registered.")
             return redirect('register')
 
-        verification_code = get_random_string(6, allowed_chars='0123456789')
         hashed_password = make_password(password)
 
-        pending_user = PendingUser.objects.create(
+        user = User.objects.create(
             email=email,
             password=hashed_password,
             role=role,
-            verification_code=verification_code,
-            created_at=datetime.now(timezone.utc)
         )
 
-        email_data = {
-            "email": email,
-            "verification_code": verification_code,
-            "role": role,
-        }
-
-        send_email.delay(
-            "Verify your email",
-            [email],
-            "emails/email_verification_template.html",
-            email_data,
-        )
-
-        messages.success(request, "Registration successful. Please check your email to verify your account.")
-        return redirect('verify_account')
+        auth.login(request, user)
+        messages.success(request, "Registration successful. You are now logged in.")
+        return redirect("home")
 
     return render(request, 'register.html')
+
 
 
 def verify_account(request):
