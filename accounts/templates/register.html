@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %} | Login {% endblock %}
+{% block title %} | Register {% endblock %}
 
 {% block content %}
 <div class="auth-content">
@@ -11,27 +11,38 @@
 
     <div class="auth-card">
       <div class="auth-header">
-
         <h2>👥 Register</h2>
       </div>
       <form action="{% url 'register' %}" method="POST">
         {% csrf_token %}
+        
         <div class="form-group">
           <label for="email" class="form-label">Email</label>
           <input type="email" name="email" id="email" class="form-control" placeholder="Enter your email" required>
         </div>
+
         <div class="form-group">
           <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
           <input type="password" name="confirm_password" id="confirm_password" class="form-control" placeholder="Confirm your password" required>
           <small id="passwordHelp" class="text-danger"></small>
-
         </div>
+
+        <!-- Role selection -->
+        <div class="form-group">
+          <label class="form-label">Register as:</label><br>
+          <input type="radio" id="jobseeker" name="role" value="jobseeker" required>
+          <label for="jobseeker">Jobseeker</label>
+          &nbsp;&nbsp;
+          <input type="radio" id="employer" name="role" value="employer" required>
+          <label for="employer">Employer</label>
+        </div>
+
         <button type="submit" class="btn">Register</button>
       </form>
 
-      <!-- Additional buttons for Reset Password and Register -->
+      <!-- Additional buttons for Reset Password and Login -->
       <div class="form-group" style="text-align: center; display: flex; justify-content: space-between;">
-        <a href="{% url 'login' %}" style="color: #1e3a64;  ">Proceed to login</a>
+        <a href="{% url 'login' %}" style="color: #1e3a64;">Proceed to login</a>
         <a href="{% url 'reset_password_via_email' %}" style="color: #1e3a64;">Forgot password?</a>
       </div>
     </div>

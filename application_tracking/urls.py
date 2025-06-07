@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.home, name="home"),  # <-- Add this for the home page
     path("search/", views.search, name="search"),
     path("create/", views.create_advert, name="create_advert"),
     path("my-applications/", views.my_applications, name="my_applications"),
@@ -12,5 +13,4 @@ urlpatterns = [
     path("<uuid:job_application_id>/decide/", views.decide, name="decide"),
     path("<uuid:advert_id>/update/", views.update_advert, name="update_advert"),
     path("<uuid:advert_id>/delete/", views.delete_advert, name="delete_advert"),
-
 ]

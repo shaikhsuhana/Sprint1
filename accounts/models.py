@@ -16,6 +16,13 @@ class TokenType(models.TextChoices):
 class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
+
+    ROLE_CHOICES = (
+        ('jobseeker', 'Job Seeker'),
+        ('employer', 'Employer'),
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, null=True, blank=True)  # Add this
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
     is_active = models.BooleanField(default=True)
@@ -24,11 +31,13 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
 
+
 class PendingUser(BaseModel):
     email = models.EmailField()
     password = models.CharField(max_length=255)
     verification_code = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
+    role = models.CharField(max_length=20, choices=User.ROLE_CHOICES, null=True, blank=True)  # Add this
 
     def is_valid(self) -> bool:
         lifespan_in_seconds = 20 * 60

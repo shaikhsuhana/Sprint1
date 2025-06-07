@@ -48,59 +48,81 @@ def logout(request: HttpRequest):
 @redirect_autheticated_user
 def register(request):
     if request.method == 'POST':
-        email = request.POST.get('email')
+        email = request.POST.get('email').lower()
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
+        role = request.POST.get('role')
 
-        # Validate empty fields
-        if not email or not password or not confirm_password:
-            messages.error(request, "All fields are required.")
+        # Basic validation
+        if not email or not password or not confirm_password or not role:
+            messages.error(request, "Please fill in all required fields.")
             return redirect('register')
 
-        # Confirm password match
         if password != confirm_password:
             messages.error(request, "Passwords do not match.")
             return redirect('register')
 
-        # Password strength check
-        import re
-        strong_regex = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$')
-        if not strong_regex.match(password):
-            messages.error(request, "Password must be 8+ characters, include uppercase, lowercase, number, and special character.")
+        if User.objects.filter(email=email).exists() or PendingUser.objects.filter(email=email).exists():
+            messages.error(request, "Email is already registered or pending verification.")
             return redirect('register')
 
-        # Check if user already exists
-        if User.objects.filter(username=email).exists():
-            messages.error(request, "Email is already registered.")
-            return redirect('register')
+        verification_code = get_random_string(6, allowed_chars='0123456789')
+        hashed_password = make_password(password)
 
-        # Create user
-        user = User.objects.create_user(username=email, email=email, password=password)
-        user.save()
-        messages.success(request, "Registration successful. Please log in.")
-        return redirect('login')
+        pending_user = PendingUser.objects.create(
+            email=email,
+            password=hashed_password,
+            role=role,
+            verification_code=verification_code,
+            created_at=datetime.now(timezone.utc)
+        )
+
+        email_data = {
+            "email": email,
+            "verification_code": verification_code,
+            "role": role,
+        }
+
+        send_email.delay(
+            "Verify your email",
+            [email],
+            "emails/email_verification_template.html",
+            email_data,
+        )
+
+        messages.success(request, "Registration successful. Please check your email to verify your account.")
+        return redirect('verify_account')
 
     return render(request, 'register.html')
 
 
-def verify_account(request: HttpRequest):
+def verify_account(request):
     if request.method == "POST":
-        code: str = request.POST["code"]
-        email: str = request.POST["email"]
-        pending_user: PendingUser = PendingUser.objects.filter(
-            verification_code=code, email=email
-        ).first()
+        verification_code = request.POST.get("verification_code", "")
+        email = request.POST.get("email", "").lower()
+
+        pending_user = PendingUser.objects.filter(verification_code=verification_code, email=email).first()
+
         if pending_user and pending_user.is_valid():
-            user = User.objects.create(
-                email=pending_user.email, password=pending_user.password
-            )
-            pending_user.delete()
+            with transaction.atomic():
+                user = User.objects.create(
+                    email=pending_user.email,
+                    password=pending_user.password,
+                    role=pending_user.role
+                )
+                pending_user.delete()
+
             auth.login(request, user)
-            messages.success(request, "Account verified. You are now logged in")
+            messages.success(request, "Account verified. You are now logged in.")
             return redirect("home")
         else:
-            messages.error(request, "Invalid or expired verification code")
+            messages.error(request, "Invalid or expired verification code.")
             return render(request, "verify_account.html", {"email": email}, status=400)
+
+    email = request.GET.get("email", "")
+    return render(request, "verify_account.html", {"email": email})
+
+
 
 
 def send_password_reset_link(request: HttpRequest):

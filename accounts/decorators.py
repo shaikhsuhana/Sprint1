@@ -1,5 +1,6 @@
 from django.http import HttpRequest
 from django.shortcuts import redirect
+from django.contrib import messages
 
 
 def redirect_autheticated_user(view_func):
@@ -11,3 +12,4 @@ def redirect_autheticated_user(view_func):
         return view_func(request, *args, **kwargs)
     
     return wrapper
+

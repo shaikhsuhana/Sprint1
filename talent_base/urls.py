@@ -18,10 +18,10 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path, include
 from django.conf.urls.static import static
-from application_tracking.views import list_adverts
+from application_tracking.views import home
 
 urlpatterns = [
-    path("", list_adverts, name="home"),
+    path("", home, name="home"),
     path('admin/', admin.site.urls),
     path("auth/", include("accounts.urls")),
     path("adverts/", include("application_tracking.urls")),
